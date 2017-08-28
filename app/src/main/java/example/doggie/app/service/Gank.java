@@ -20,10 +20,8 @@ public class Gank {
     private GankService mGankService;
 
     public static Gank getInstance(){
-        synchronized (Gank.class){
             if(INSTANCE == null) INSTANCE = new Gank();
             return INSTANCE;
-        }
     }
 
     private Gank(){
@@ -41,7 +39,5 @@ public class Gank {
 
     }
 
-    public GankService getGankService(){
-        return this.mGankService;
-    }
+    public GankService getGankService(){return this.mGankService;}
 }

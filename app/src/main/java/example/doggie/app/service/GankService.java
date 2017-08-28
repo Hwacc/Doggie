@@ -14,4 +14,6 @@ public interface GankService {
     @GET("day/{year}/{month}/{day}")
     Observable<GankDaily> getDaily(@Path("year") int year, @Path("month") int month, @Path("day") int day);
 
+    @GET("data/福利/{count}/{page}")
+    Observable<GankDaily> getFuli(@Path("count")int count,@Path("page") int page);
 }
