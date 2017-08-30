@@ -1,6 +1,10 @@
 package example.doggie.app.service;
 
+import java.util.List;
+
+import example.doggie.app.core.bean.BaseGankData;
 import example.doggie.app.core.bean.GankDaily;
+import example.doggie.app.core.bean.GankData;
 import io.reactivex.Observable;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
@@ -15,5 +19,5 @@ public interface GankService {
     Observable<GankDaily> getDaily(@Path("year") int year, @Path("month") int month, @Path("day") int day);
 
     @GET("data/福利/{count}/{page}")
-    Observable<GankDaily> getFuli(@Path("count")int count,@Path("page") int page);
+    Observable<GankData> getFuli(@Path("count")int count, @Path("page") int page);
 }

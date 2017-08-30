@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <group android:id="@+id/group1">
+        <item android:id="@+id/nav_name"
+            app:showAsAction="ifRoom"
+            android:title="person" />
+        <item android:id="@+id/nav_music"
+            android:title="music"
+            app:showAsAction="ifRoom"/>
+        <item android:id="@+id/nav_search"
+            android:title="search"
+            app:showAsAction="ifRoom"/>
+    </group>
+    <group android:id="@+id/group2">
+        <item android:id="@+id/nav_name2"
+            app:showAsAction="ifRoom"
+            android:title="person" />
+        <item android:id="@+id/nav_music2"
+            android:title="music"
+            app:showAsAction="ifRoom"/>
+        <item android:id="@+id/nav_search2"
+            android:title="search"
+            app:showAsAction="ifRoom"/>
+    </group>
+    <group android:id="@+id/group3">
+        <item android:id="@+id/nav_name3"
+            app:showAsAction="ifRoom"
+            android:title="person" />
+        <item android:id="@+id/nav_music3"
+            android:title="music"
+            app:showAsAction="ifRoom"/>
+        <item android:id="@+id/nav_search3"
+            android:title="search"
+            app:showAsAction="ifRoom"/>
+    </group>
+</menu>

@@ -9,7 +9,7 @@ import android.widget.TextView;
 import example.doggie.R;
 import example.doggie.app.core.base.BaseFragment;
 import example.doggie.app.core.base.IBasePresenter;
-import example.doggie.app.core.bean.GankDaily;
+import example.doggie.app.core.bean.GankData;
 import example.doggie.main.MainContract;
 
 /**
@@ -26,7 +26,7 @@ public class Fragment2 extends BaseFragment implements MainContract.View{
 
     @Override
     protected View initFragment(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.main_frag,container,false);
+        View root = inflater.inflate(R.layout.layout_frag1,container,false);
         mTextView = (TextView) root.findViewById(R.id.text_view);
         return root;
     }
@@ -44,6 +44,6 @@ public class Fragment2 extends BaseFragment implements MainContract.View{
 
     @Override
     public void showData(Object data) {
-        GankDaily daily = (GankDaily)data;
+        GankData gankData = (GankData)data;
     }
 }

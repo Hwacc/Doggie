@@ -1,10 +1,12 @@
 package example.doggie.main.frag2;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import example.doggie.app.core.bean.BaseGankData;
 import example.doggie.app.core.bean.GankDaily;
+import example.doggie.app.core.bean.GankData;
 import example.doggie.app.service.Gank;
 import example.doggie.app.service.GankService;
 import example.doggie.main.MainContract;
@@ -37,23 +39,15 @@ public class Presenter2 implements MainContract.PresenterI{
     @Override
     public void subscribe() {
         if(mGankService != null){
-            Observable<List<BaseGankData>> observable =  mGankService.getFuli(10,1)
+            Observable<GankData> observable =  mGankService.getFuli(10,1)
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribeOn(Schedulers.io())
-                    .map(new Function<GankDaily,List<BaseGankData>>(){
+                    .subscribeOn(Schedulers.io());
 
-                        @Override
-                        public List<BaseGankData> apply(@NonNull GankDaily gankDaily) throws Exception {
-                            Object results = gankDaily.results;
-                            return null;
-                        }
-                    });
-
-            mDisposable =  observable.subscribe(new Consumer<List<BaseGankData>>() {
+            mDisposable =  observable.subscribe(new Consumer<GankData>() {
                 @Override
-                public void accept(List<BaseGankData> gankDaily) throws Exception {
+                public void accept(GankData gankData) throws Exception {
                     Log.d("TAG","get FuliData");
-                    mView.showData(gankDaily);
+                    mView.showData(gankData);
                 }
             }, new Consumer<Throwable>() {
                 @Override
