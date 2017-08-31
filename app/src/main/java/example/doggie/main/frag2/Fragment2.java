@@ -18,16 +18,13 @@ import example.doggie.main.MainContract;
 
 public class Fragment2 extends BaseFragment implements MainContract.View{
 
-    private TextView mTextView;
-
     public static Fragment2 newInstance() {
         return new Fragment2();
     }
 
     @Override
     protected View initFragment(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.layout_frag1,container,false);
-        mTextView = (TextView) root.findViewById(R.id.text_view);
+        View root = inflater.inflate(R.layout.layout_frag2,container,false);
         return root;
     }
 
@@ -44,6 +41,6 @@ public class Fragment2 extends BaseFragment implements MainContract.View{
 
     @Override
     public void showData(Object data) {
-        GankData gankData = (GankData)data;
+
     }
 }

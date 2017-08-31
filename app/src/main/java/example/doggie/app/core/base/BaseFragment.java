@@ -37,18 +37,29 @@ public abstract class BaseFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         mPresenter = initPresenter();
+        Thread sub = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                mPresenter.subscribe();
+            }
+        });
+        sub.start();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        mPresenter.subscribe();
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        mPresenter.unsubscribe();
+
     }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+        mPresenter.unsubscribe();
+    }
 }

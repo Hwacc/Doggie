@@ -3,6 +3,7 @@ package example.doggie;
 import android.app.Application;
 import android.content.Context;
 
+import com.facebook.drawee.backends.pipeline.Fresco;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -38,6 +39,7 @@ public class App extends Application {
         super.onCreate();
         ourInstance = this;
         this.initGson();
+        Fresco.initialize(this);
     }
 
 
