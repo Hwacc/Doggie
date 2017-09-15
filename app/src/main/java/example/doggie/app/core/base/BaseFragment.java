@@ -1,6 +1,7 @@
 package example.doggie.app.core.base;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -16,6 +17,7 @@ public abstract class BaseFragment extends Fragment {
 
     private IBasePresenter mPresenter;
     protected Context mContext;
+    protected Resources mResources;
     protected abstract View initFragment(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState);
     protected abstract IBasePresenter initPresenter();
 
@@ -31,12 +33,19 @@ public abstract class BaseFragment extends Fragment {
     public void onAttach(Context context) {
         super.onAttach(context);
         mContext=context;
+        mResources=context.getResources();
     }
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         mPresenter = initPresenter();
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
         Thread sub = new Thread(new Runnable() {
             @Override
             public void run() {

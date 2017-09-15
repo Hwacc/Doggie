@@ -47,7 +47,7 @@ public class Presenter2 implements MainContract.PresenterI{
                 @Override
                 public void accept(GankData gankData) throws Exception {
                     Log.d("TAG","get FuliData");
-                    mView.showData(gankData);
+                    mView.onSucceed(gankData);
                 }
             }, new Consumer<Throwable>() {
                 @Override

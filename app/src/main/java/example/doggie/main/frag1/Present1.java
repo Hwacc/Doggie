@@ -1,12 +1,18 @@
 package example.doggie.main.frag1;
 
+import android.os.Handler;
+import android.support.v4.util.Pair;
 import android.util.Log;
 import android.view.ViewGroup;
 
 import org.reactivestreams.Publisher;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import example.doggie.app.core.base.IBasePresenter;
@@ -23,8 +29,10 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
+import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -38,6 +46,8 @@ public class Present1 implements MainContract.PresenterI, IBasePresenter {
     private GankService mGankService;
     private int mY,mM,mD;
     private Disposable mDisposable;
+    private boolean mCompleteLock = false;
+
 
     public Present1(MainContract.View view){
         mGank = Gank.getInstance();
@@ -51,54 +61,64 @@ public class Present1 implements MainContract.PresenterI, IBasePresenter {
         this.mD = day;
     }
 
+    public void subscribeByDate(int year,int month,int day){
+        this.mY = year;
+        this.mM = month;
+        this.mD = day;
+        this.subscribe();
+    }
+
     @Override
     public void subscribe() {
         if(mGankService != null){
-            Observable<List<BaseGankData>> observable =  mGankService.getDaily(mY,mM,mD)
-                    .map(new Function<GankDaily, List<BaseGankData>>() {
-                        List<BaseGankData> dataList = new ArrayList<BaseGankData>();
+            Observable<GankDaily> observable =  mGankService.getDaily(mY,mM,mD)
+                    .filter(new Predicate<GankDaily>() {
                         @Override
-                        public List<BaseGankData> apply(@NonNull GankDaily gankDaily) throws Exception {
-                            Log.d("TAG","map in "+Thread.currentThread().getName()+"thread");
-                            dataList.addAll(gankDaily.results.androidData);
-                            dataList.addAll(gankDaily.results.welfareData);
-                            return dataList;
+                        public boolean test(@NonNull GankDaily gankDaily) throws Exception {
+                            mCompleteLock = false;
+                            return !(gankDaily.results.androidData == null || gankDaily.results.welfareData == null);
                         }
                     })
+                   /*.map(new Function<GankDaily,GankDaily>() {
+                        @Override
+                        public GankDaily apply(@NonNull GankDaily gankDaily) throws Exception {
+                            Log.d("TAG","map in "+Thread.currentThread().getName()+"thread");
+                            dataMap.put(mY+"-"+mM+"-"+mD,gankDaily);
+                            return dataMap;
+                        }
+                    })*/
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread());
 
-            mDisposable =  observable.subscribe(new Consumer<List<BaseGankData>>() {
-
+            mDisposable =  observable.subscribe(new Consumer<GankDaily>() {
                 @Override
-                public void accept(List<BaseGankData> baseGankDatas) throws Exception {
-                    Log.d("TAG","get GankData");
+                public void accept(GankDaily baseGankDatas) throws Exception {
                     Log.d("TAG","subcribe in "+Thread.currentThread().getName()+"thread");
-                    mView.showData(baseGankDatas);
+                    mCompleteLock = true;
+                    final Pair<String,GankDaily> data = new Pair<String,GankDaily>(mY+"-"+mM+"-"+mD,baseGankDatas);
+                    mView.onSucceed(data);
                 }
 
             }, new Consumer<Throwable>() {
                 @Override
                 public void accept(Throwable throwable) throws Exception {
                     // on Error
-                    Log.e("ERROR",throwable.getMessage());
+                    mView.onError(throwable.getMessage());
                 }
             }, new Action() {
                 @Override
                 public void run() throws Exception {
                     // on Complete
+                    if(!mCompleteLock){
+                        mView.onComplete();
+                    }
                 }
             });
         }
     }
+    @Override
+    public void unsubscribe() {mDisposable.dispose();}
 
     @Override
-    public void unsubscribe() {
-        mDisposable.dispose();
-    }
-
-    @Override
-    public void getData() {
-
-    }
+    public void getData() {}
 }

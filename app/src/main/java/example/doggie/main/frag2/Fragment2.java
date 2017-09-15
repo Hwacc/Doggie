@@ -40,7 +40,17 @@ public class Fragment2 extends BaseFragment implements MainContract.View{
     }
 
     @Override
-    public void showData(Object data) {
+    public void onSucceed(Object data) {
+
+    }
+
+    @Override
+    public void onError(String errorMsg) {
+
+    }
+
+    @Override
+    public void onComplete() {
 
     }
 }

@@ -19,6 +19,8 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 
+import java.lang.reflect.Array;
+
 import example.doggie.R;
 import example.doggie.main.frag1.Fragment1;
 import example.doggie.main.frag2.Fragment2;

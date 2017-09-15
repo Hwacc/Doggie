@@ -1,5 +1,7 @@
 package example.doggie.main;
 
+import java.util.concurrent.Callable;
+
 import example.doggie.app.core.base.IBasePresenter;
 import example.doggie.app.core.base.IBaseView;
 
@@ -10,7 +12,9 @@ import example.doggie.app.core.base.IBaseView;
 public interface MainContract {
 
     interface View<T> extends IBaseView<PresenterI> {
-        void showData( T data);
+        void onSucceed(T data);
+        void onError(String errorMsg);
+        void onComplete();
     }
 
     interface PresenterI extends IBasePresenter {
