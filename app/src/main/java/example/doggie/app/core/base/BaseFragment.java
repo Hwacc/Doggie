@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +22,20 @@ public abstract class BaseFragment extends Fragment {
     protected abstract View initFragment(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState);
     protected abstract IBasePresenter initPresenter();
 
+    public interface OnPageViewSelected {int seleced();}
+    protected OnPageViewSelected mSelectLinstener;
+
     public BaseFragment(){}
+
+    public void setOnPageViewSelected(OnPageViewSelected selected){
+        this.mSelectLinstener = selected;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mPresenter = initPresenter();
+    }
 
     @Nullable
     @Override
@@ -39,36 +53,27 @@ public abstract class BaseFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        mPresenter = initPresenter();
-
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        Thread sub = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                mPresenter.subscribe();
-            }
-        });
-        sub.start();
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        mPresenter.subscribe();
     }
 
     @Override
     public void onPause() {
         super.onPause();
-
+        mPresenter.unsubscribe();
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        mPresenter.unsubscribe();
     }
 }

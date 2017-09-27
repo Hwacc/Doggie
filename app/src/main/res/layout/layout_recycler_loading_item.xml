@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:circleimg="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/loading_layout"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ImageView
+    <example.doggie.main.widget.CircleImageView
         android:id="@+id/loading_item"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_gravity="center"
         android:layout_marginTop="@dimen/margin_8dp"
         android:layout_marginBottom="@dimen/margin_8dp"
+        circleimg:radius="40"
+        circleimg:bcolor="@color/white"
         />
 </LinearLayout>

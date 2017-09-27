@@ -1,11 +1,14 @@
 package example.doggie.main.frag2;
 
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import example.doggie.App;
 import example.doggie.R;
 import example.doggie.app.core.base.BaseFragment;
 import example.doggie.app.core.base.IBasePresenter;
@@ -25,6 +28,9 @@ public class Fragment2 extends BaseFragment implements MainContract.View{
     @Override
     protected View initFragment(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.layout_frag2,container,false);
+
+        AppCompatActivity activity = (AppCompatActivity)getActivity();
+        activity.setSupportActionBar(new Toolbar(mContext));
         return root;
     }
 

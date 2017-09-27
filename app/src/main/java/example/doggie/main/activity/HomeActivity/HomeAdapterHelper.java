@@ -1,8 +1,7 @@
-package example.doggie.main.frag1;
+package example.doggie.main.activity.HomeActivity;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Paint;
 import android.graphics.PointF;
 import android.media.FaceDetector;
 import android.net.Uri;
@@ -13,13 +12,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.alibaba.android.vlayout.DelegateAdapter;
 import com.alibaba.android.vlayout.LayoutHelper;
 import com.alibaba.android.vlayout.layout.GridLayoutHelper;
 import com.alibaba.android.vlayout.layout.LinearLayoutHelper;
-
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.generic.GenericDraweeHierarchy;
 import com.facebook.drawee.interfaces.DraweeController;
@@ -32,43 +31,38 @@ import com.facebook.imagepipeline.request.Postprocessor;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import example.doggie.R;
+import example.doggie.app.core.api.GankApi;
 import example.doggie.app.core.bean.BaseGankData;
 import example.doggie.app.utils.MatcherUtil;
 import example.doggie.main.widget.StickyLayoutHelper;
 
 /**
- * Created by Hwa on 2017/9/11.
+ * Created by Hwa on 2017/9/27.
  */
 
-public class AdapterHelper {
-
-    public static final int GRID_TYPE = 100;
+public class HomeAdapterHelper {
+    public static final int INFO_TYPE = 100;
     public static final int LINEAR_TYPE = 101;
     public static final int STICK_TYPE = 102;
 
-    private static final String TAG = AdapterHelper.class.getSimpleName();
+    private static final String TAG = HomeAdapterHelper.class.getSimpleName();
 
-    private static final int MAX_FACE_NUM = 5;//最大可以检测出的人脸数量
-    private int mRealFaceNum = 0;//实际检测出的人脸数量
-    private Bitmap bm;//选择的图片的Bitmap对象
-    private Paint paint;//画人脸区域用到的Paint
-    private boolean hasDetected = false;//标记是否检测到人脸
+    private Context mContext;
 
-    private  Context mContext;
-
-    public AdapterHelper(Context context){
+    public HomeAdapterHelper(Context context){
         this.mContext = context;
     }
 
 
     public DelegateAdapter.Adapter makeStickyAdapter(final int year, final int month, final int day){
 
-        DelegateAdapter.Adapter stickAdapter = new DelegateAdapter.Adapter<StickyHolder>(){
+        DelegateAdapter.Adapter stickAdapter = new DelegateAdapter.Adapter<HomeAdapterHelper.StickyHolder>(){
             @Override
-            public StickyHolder onCreateViewHolder(ViewGroup parent, int viewType) {return new StickyHolder(LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_stick_item,parent,false));}
+            public HomeAdapterHelper.StickyHolder onCreateViewHolder(ViewGroup parent, int viewType) {return new HomeAdapterHelper.StickyHolder(LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_stick_item,parent,false));}
             @Override
-            public void onBindViewHolder(StickyHolder holder, int position) {
+            public void onBindViewHolder(HomeAdapterHelper.StickyHolder holder, int position) {
                 StringBuffer sb = new StringBuffer();
                 sb.append(year).append('-').append(month).append('-').append(day);
                 holder.textView.setText(sb.toString());}
@@ -90,68 +84,61 @@ public class AdapterHelper {
         return stickAdapter;
     }
 
-    public DelegateAdapter.Adapter makeAndroidAdapter(final List<BaseGankData> androidData){
-        if(androidData == null || androidData.size() == 0){
+    public DelegateAdapter.Adapter makeLinearAdapter(final List<BaseGankData> datas){
+        if(datas == null || datas.size() == 0){
             return DelegateAdapter.simpleAdapter(LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_404_item,null));
         }else {
-            DelegateAdapter.Adapter androidAdapter =  new DelegateAdapter.Adapter<GridHolder>() {
+            DelegateAdapter.Adapter androidAdapter =  new DelegateAdapter.Adapter<HomeAdapterHelper.InfoHolder>() {
                 @Override
                 public LayoutHelper onCreateLayoutHelper() {
-                    GridLayoutHelper helper = new GridLayoutHelper(2, androidData.size(),
-                            (int) mContext.getResources().getDimension(R.dimen.margin_5dp)
-                    );
+                    LinearLayoutHelper helper = new LinearLayoutHelper();
                     int margin = (int) mContext.getResources().getDimension(R.dimen.margin_10dp);
                     helper.setMargin(margin, margin, margin, margin);
                     return helper;
                 }
                 @Override
-                public GridHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-                    GridHolder gHolder = new GridHolder(
-                            LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_grid_item, parent, false));
-                    return gHolder;
+                public HomeAdapterHelper.InfoHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+                    HomeAdapterHelper.InfoHolder holder = new HomeAdapterHelper.InfoHolder(
+                            LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_item_linear, parent, false));
+                    return holder;
                 }
 
                 @Override
-                public void onBindViewHolder(GridHolder holder, int position) {
-                    BaseGankData data = androidData.get(position);
-                    if (MatcherUtil.getPictureUrl(data.url)) {
-                        DraweeController controller = Fresco.newDraweeControllerBuilder()
-                                .setUri(androidData.get(position).url)
-                                .setOldController(holder.draweeView.getController())
-                                .build();
-                        holder.draweeView.setController(controller);
-                    } else {
-                        holder.draweeView.setImageResource(R.mipmap.android);
+                public void onBindViewHolder(HomeAdapterHelper.InfoHolder holder, int position) {
+                    BaseGankData data = datas.get(position);
+                    if(data.type.equals(GankApi.DATA_TYPE_ANDROID)){
+                        holder.titleImgView.setImageResource(R.mipmap.android);
+                        holder.titleView.setText(data.desc);
+                        holder.authorView.setText(data.who);
                     }
-                    holder.titleView.setText(androidData.get(position).desc);
                 }
+
                 @Override
                 public int getItemViewType(int position) {
-                    return GRID_TYPE;
+                    return INFO_TYPE;
                 }
                 @Override
                 public int getItemCount() {
-                    return androidData.size();
+                    return datas.size();
                 }
             };
-
             return androidAdapter;
         }
     }
 
-    public DelegateAdapter.Adapter makeWelfareAdapter(final List<BaseGankData> welfareData){
+    /*public DelegateAdapter.Adapter makeWelfareAdapter(final List<BaseGankData> welfareData){
         if(welfareData == null || welfareData.size() == 0){
             return DelegateAdapter.simpleAdapter(LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_404_item,null));
         }else{
-            DelegateAdapter.Adapter welfareAdapter = new DelegateAdapter.Adapter<LinearHolder>() {
+            DelegateAdapter.Adapter welfareAdapter = new DelegateAdapter.Adapter<AdapterHelper.LinearHolder>() {
                 @Override
-                public LinearHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-                    LinearHolder lHolder = new LinearHolder(
+                public AdapterHelper.LinearHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+                    AdapterHelper.LinearHolder lHolder = new AdapterHelper.LinearHolder(
                             LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_linear_item, parent, false));
                     return lHolder;
                 }
                 @Override
-                public void onBindViewHolder(LinearHolder holder, int position) {
+                public void onBindViewHolder(AdapterHelper.LinearHolder holder, int position) {
                     Uri imageUri = Uri.parse(welfareData.get(position).url.replace("large","bmiddle"));
                     ImageRequest request = ImageRequestBuilder.newBuilderWithSource(imageUri)
                             .setPostprocessor(getFacePostProcessor(imageUri.getPath()))
@@ -187,70 +174,7 @@ public class AdapterHelper {
             };
             return welfareAdapter;
         }
-    }
-
-    private Map<String,PointF> mFaceMap = new HashMap<>();
-    private Postprocessor getFacePostProcessor(final String url){
-
-        Postprocessor postprocessor = new BasePostprocessor() {
-            @Override
-            public String getName() {
-                return "face-postprocessor";
-            }
-
-            @Override
-            public void process(Bitmap bitmap) {
-                bitmap = bitmap.copy(Bitmap.Config.RGB_565,true);
-                if(mFaceMap.get(url) == null){
-                    FaceDetectTask task = new FaceDetectTask();
-                    task.execute(new Pair<>(url,bitmap));
-                }
-                super.process(bitmap);
-            }
-        };
-
-        return postprocessor;
-    }
-
-    private  class FaceDetectTask extends AsyncTask<Pair<String,Bitmap>,Void,PointF>{
-
-        private Pair<String, Bitmap>[] pair;
-        @Override
-        protected PointF doInBackground(Pair<String,Bitmap>... bitmapPair) {
-            pair = bitmapPair;
-            FaceDetector detector = new FaceDetector(bitmapPair[0].second.getWidth(),
-                    bitmapPair[0].second.getHeight(),MAX_FACE_NUM);
-            FaceDetector.Face[] faces = new FaceDetector.Face[MAX_FACE_NUM];
-            mRealFaceNum = detector.findFaces(bitmapPair[0].second,faces);
-
-            PointF focusPoint = null;
-
-            if(faces[0] != null){
-                PointF facePoint = new PointF();
-                FaceDetector.Face face = faces[0];
-                face.getMidPoint(facePoint);
-//                Log.d("TAG","face point x = "+facePoint.x+"y = "+facePoint.y);
-
-                focusPoint = new PointF();
-                int bHeight = pair[0].second.getHeight();
-                int bWidth = pair[0].second.getWidth();
-                focusPoint.x = facePoint.x/bWidth;
-                focusPoint.y = facePoint.y/bHeight;
-//                Log.d("TAG","focus point x = "+focusPoint.x+"y = "+focusPoint.y);
-            }
-            return focusPoint;
-        }
-
-        @Override
-        protected void onPostExecute(PointF focusPoint) {
-//          Log.d("TAG",""+(faces[0] == null));
-            if(focusPoint != null){
-                mFaceMap.put(pair[0].first,focusPoint);
-            }else{
-                mFaceMap.put(pair[0].first,new PointF(0.5f,0.5f));
-            }
-        }
-    }
+    }*/
 
     private class StickyHolder extends RecyclerView.ViewHolder{
         TextView textView;
@@ -260,14 +184,16 @@ public class AdapterHelper {
         }
     }
 
-    private class LinearHolder extends RecyclerView.ViewHolder {
-        DraweeView draweeView;
+    private class InfoHolder extends RecyclerView.ViewHolder {
+        ImageView titleImgView;
         TextView titleView;
+        TextView authorView;
 
-        public LinearHolder(View itemView) {
+        public InfoHolder(View itemView) {
             super(itemView);
-            draweeView = (DraweeView) itemView.findViewById(R.id.item_drawee_view);
-            titleView = (TextView) itemView.findViewById(R.id.item_title);
+            titleImgView = (ImageView) itemView.findViewById(R.id.item_info_img);
+            titleView = (TextView) itemView.findViewById(R.id.item_info_title);
+            authorView = (TextView) itemView.findViewById(R.id.item_info_author);
         }
     }
 
@@ -281,5 +207,4 @@ public class AdapterHelper {
             titleView = (TextView) itemView.findViewById(R.id.item_title);
         }
     }
-
 }

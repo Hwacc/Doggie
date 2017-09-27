@@ -38,15 +38,13 @@ public class Presenter2 implements MainContract.PresenterI{
 
     @Override
     public void subscribe() {
-        if(mGankService != null){
+/*        if(mGankService != null){
             Observable<GankData> observable =  mGankService.getFuli(10,1)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribeOn(Schedulers.io());
+                    .observeOn(AndroidSchedulers.mainThread());
 
             mDisposable =  observable.subscribe(new Consumer<GankData>() {
                 @Override
                 public void accept(GankData gankData) throws Exception {
-                    Log.d("TAG","get FuliData");
                     mView.onSucceed(gankData);
                 }
             }, new Consumer<Throwable>() {
@@ -61,7 +59,7 @@ public class Presenter2 implements MainContract.PresenterI{
                     // on Complete
                 }
             });
-        }
+        }*/
     }
 
     @Override

@@ -1,21 +1,22 @@
-package example.doggie.main.frag1;
+package example.doggie.main.activity.HomeActivity;
 
 import android.animation.ValueAnimator;
+import android.content.Context;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.TabLayout;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.RecyclerView.OnScrollListener;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
+import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,133 +24,88 @@ import android.view.animation.DecelerateInterpolator;
 
 import com.alibaba.android.vlayout.DelegateAdapter;
 import com.alibaba.android.vlayout.VirtualLayoutManager;
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.interfaces.DraweeController;
+import com.facebook.drawee.view.SimpleDraweeView;
+import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
 import java.util.Calendar;
 
 import example.doggie.R;
-import example.doggie.app.core.base.BaseFragment;
-import example.doggie.app.core.base.IBasePresenter;
+import example.doggie.main.frag1.AdapterHelper;
 import example.doggie.main.widget.CircleImageView;
 import example.doggie.main.widget.MaterialProgressDrawable;
 
 /**
- * Created by Hwa on 2017/8/28.
+ * Created by Hwa on 2017/9/27.
  */
 
-public class Fragment1 extends BaseFragment implements
-        F1Contract.View,SwipeRefreshLayout.OnRefreshListener,TabLayout.OnTabSelectedListener{
+public class MainActivity extends AppCompatActivity implements HomeContract.View {
+
+    private HomePresenter mPresenter;
 
     private static int FOOTER_TYPE = 1;
-    private static int LOADING = 2;
-    private static int LOADED = 3;
-
-    private SwipeRefreshLayout mSwipe;
-    private VirtualLayoutManager mLayoutManager;
-    private DelegateAdapter mAdapter;
-    private Present1 mPresent;
-    private int mYear = 2015,mMonth = 8,mDay = 7;
-    private int mLoadState = LOADED;
-    private Handler mMainHandler;
-
     private Toolbar mToolbar;
     private TabLayout mTableLayout;
     private AppBarLayout mAppbarLayout;
     private CollapsingToolbarLayout mToolbarLayout;
     private CoordinatorLayout mCoordinator;
-
-    public static Fragment1 newInstance() {
-        return new Fragment1();
-    }
+    private RecyclerView mRecyclerView;
+    private VirtualLayoutManager mLayoutManager;
+    private DelegateAdapter mAdapter;
+    private Handler mMainHandler;
+    private int mYear = 2015,mMonth = 8,mDay = 7;
+    private SimpleDraweeView mToolbarImg;
 
     @Override
-    public View initFragment(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.layout_frag1, container, false);
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.layout_activity_main);
 
-/*        mSwipe = (SwipeRefreshLayout) root.findViewById(R.id.fra1_swipe);
-        mSwipe.setProgressBackgroundColorSchemeResource(R.color.white);
-        mSwipe.setColorSchemeResources(R.color.lightblue200,R.color.lightblue300,R.color.lightblue400,R.color.lightblue500);
-        mSwipe.setProgressViewOffset(false, 0, (int) getResources().getDimension(R.dimen.dis_refresh));
-        mSwipe.setOnRefreshListener(this);*/
-
-//        mCoordinator = (CoordinatorLayout) root.findViewById(R.id.main_colayout);
-        mAppbarLayout = (AppBarLayout) root.findViewById(R.id.toolbar_layout);
-        mToolbarLayout = (CollapsingToolbarLayout) root.findViewById(R.id.collapsing);
+        mAppbarLayout = (AppBarLayout) findViewById(R.id.toolbar_layout);
+        mToolbarLayout = (CollapsingToolbarLayout)findViewById(R.id.collapsing);
         //tool bar
-        mToolbar = (Toolbar) root.findViewById(R.id.toolbar);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mToolbar.setTitleTextColor(Color.parseColor("#ffffff"));
-
-        AppCompatActivity activity = (AppCompatActivity) getActivity();
-        activity.setSupportActionBar(mToolbar);
-        ActionBar actionBar = activity.getSupportActionBar();
+        setSupportActionBar(mToolbar);
+        ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
         actionBar.setDisplayShowHomeEnabled(true);
+        mToolbarImg = (SimpleDraweeView) findViewById(R.id.toolbar_img);
 
-        mTableLayout = (TabLayout) root.findViewById(R.id.tabLayout);
-        mTableLayout.addOnTabSelectedListener(this);
-        mTableLayout.getTabAt(mSelectLinstener.seleced()).select();
-
-        RecyclerView recyclerView = (RecyclerView) root.findViewById(R.id.frag1_recycler);
-        mLayoutManager = new VirtualLayoutManager(mContext, OrientationHelper.VERTICAL);
-        recyclerView.setLayoutManager(mLayoutManager);
+        mRecyclerView = (RecyclerView) findViewById(R.id.main_recycler);
+        mLayoutManager = new VirtualLayoutManager(this, OrientationHelper.VERTICAL);
+        mRecyclerView.setLayoutManager(mLayoutManager);
         RecyclerView.RecycledViewPool viewPool = new RecyclerView.RecycledViewPool();
-        recyclerView.setRecycledViewPool(viewPool);
+        mRecyclerView.setRecycledViewPool(viewPool);
 
-        viewPool.setMaxRecycledViews(AdapterHelper.GRID_TYPE, 5);
-        viewPool.setMaxRecycledViews(AdapterHelper.LINEAR_TYPE, 5);
-        viewPool.setMaxRecycledViews(AdapterHelper.STICK_TYPE,50);
+        viewPool.setMaxRecycledViews(HomeAdapterHelper.INFO_TYPE,10);
         viewPool.setMaxRecycledViews(FOOTER_TYPE,2);
         mAdapter = new MainAdapter(mLayoutManager, true);
+        mRecyclerView.setAdapter(mAdapter);
 
-        recyclerView.setAdapter(mAdapter);
-        recyclerView.addOnScrollListener(new OnScrollListener() {
-            private int lastVisibleItem;
-            @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                super.onScrollStateChanged(recyclerView, newState);
-                if (newState ==RecyclerView.SCROLL_STATE_IDLE && lastVisibleItem + 1 ==mAdapter.getItemCount()){
-                    if(mLoadState == LOADED){
-                        mMainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                mLoadState = LOADING;
-                                setNextDay();
-                                mPresent.subscribeByDate(mYear,mMonth,mDay);
-                            }
-                        });
-                    }
-                }
-            }
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                lastVisibleItem = mLayoutManager.findLastVisibleItemPosition();
-            }
-        });
-        mMainHandler = new Handler();
-        return root;
-    }
 
-    @Override
-    public void onRefresh() {
-        mMainHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-//                mSwipe.setRefreshing(false);
-            }
-        },3000);
-    }
-
-    @Override
-    public IBasePresenter initPresenter() {
         Calendar calendar = Calendar.getInstance();
         mYear = calendar.get(Calendar.YEAR);
         mMonth = calendar.get(Calendar.MONTH) + 1;
         mDay = calendar.get(Calendar.DAY_OF_MONTH);
-        mPresent = new Present1(mContext,this);
-        mPresent.initDataTime(mYear, mMonth, mDay);
-        return mPresent;
+        mPresenter = new HomePresenter(this,this);
+        mPresenter.initDataTime(mYear, mMonth, mDay);
+        mMainHandler = new Handler();
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mPresenter.subscribe();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mPresenter.unsubscribe();
+    }
 
     @Override
     public void setPresenter(Object presenter) {
@@ -157,15 +113,8 @@ public class Fragment1 extends BaseFragment implements
     }
 
     @Override
-    public void setAdapter(DelegateAdapter.Adapter adapter) {
-        mAdapter.addAdapter(adapter);
-        mAdapter.notifyItemInserted(mAdapter.getItemCount() - 1);
-        mLoadState = LOADED;
-    }
-
-    @Override
     public void onSucceed(Object data) {
-        //noinspection unchecked
+
     }
 
     @Override
@@ -178,9 +127,8 @@ public class Fragment1 extends BaseFragment implements
         mMainHandler.post(new Runnable() {
             @Override
             public void run() {
-                mLoadState = LOADING;
                 setNextDay();
-                mPresent.subscribeByDate(mYear,mMonth,mDay);
+                mPresenter.subscribeByDate(mYear,mMonth,mDay);
             }
         });
     }
@@ -195,20 +143,22 @@ public class Fragment1 extends BaseFragment implements
     }
 
     @Override
-    public void onTabSelected(TabLayout.Tab tab) {
-
+    public void setAdapter(DelegateAdapter.Adapter adapter) {
+        mAdapter.addAdapter(adapter);
+        mAdapter.notifyItemInserted(mAdapter.getItemCount() - 1);
     }
 
     @Override
-    public void onTabUnselected(TabLayout.Tab tab) {
-
+    public void onUpdateToolBar(String url) {
+        Uri imageUri = Uri.parse(url.replace("large","bmiddle"));
+        ImageRequest request = ImageRequestBuilder.newBuilderWithSource(imageUri)
+                .build();
+        DraweeController controller = Fresco.newDraweeControllerBuilder()
+                .setImageRequest(request)
+                .setOldController(mToolbarImg.getController())
+                .build();
+        mToolbarImg.setController(controller);
     }
-
-    @Override
-    public void onTabReselected(TabLayout.Tab tab) {
-
-    }
-
 
     private class MainAdapter extends DelegateAdapter{
 
@@ -240,7 +190,7 @@ public class Fragment1 extends BaseFragment implements
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             if (viewType == FOOTER_TYPE){
                 return  new LoadHolder(
-                        LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_loading_item,parent,false));
+                        LayoutInflater.from(MainActivity.this).inflate(R.layout.layout_recycler_loading_item,parent,false));
             }
             return super.onCreateViewHolder(parent, viewType);
         }
@@ -273,7 +223,7 @@ public class Fragment1 extends BaseFragment implements
         LoadHolder(View itemView) {
             super(itemView);
             circleImageView = (CircleImageView) itemView.findViewById(R.id.loading_item);
-            progress = new MaterialProgressDrawable(mContext,circleImageView);
+            progress = new MaterialProgressDrawable(MainActivity.this,circleImageView);
             progress.setBackgroundColor(Color.WHITE);
             progress.setColorSchemeColors(R.color.lightblue200,R.color.lightblue300,R.color.lightblue400,R.color.lightblue500);
             progress.setAlpha(255);

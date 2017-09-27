@@ -32,5 +32,9 @@ public class GankDaily extends Error implements Serializable {
         @SerializedName("App") public ArrayList<BaseGankData> appData;
 
         @SerializedName("瞎推荐") public ArrayList<BaseGankData> recommendData;
+
+        public boolean isEmpty(){
+            return (welfareData==null && androidData ==null && iosData==null &&jsData ==null && videoData ==null &&resourcesData ==null&&appData==null&&recommendData==null);
+        }
     }
 }

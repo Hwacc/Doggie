@@ -1,9 +1,12 @@
 package example.doggie.app.service;
 
+import android.util.Log;
+
 import java.util.concurrent.TimeUnit;
 
 import example.doggie.App;
 import example.doggie.app.core.api.GankApi;
+import io.reactivex.schedulers.Schedulers;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -20,9 +23,9 @@ public class Gank {
 
     private GankService mGankService;
 
-    public static Gank getInstance(){
-            if(INSTANCE == null) INSTANCE = new Gank();
-            return INSTANCE;
+    public static synchronized Gank getInstance(){
+        if(INSTANCE == null) INSTANCE = new Gank();
+        return INSTANCE;
     }
 
     private Gank(){
@@ -36,12 +39,13 @@ public class Gank {
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder().baseUrl(GankApi.BASE_URL)
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.createAsync())
                 .addConverterFactory(GsonConverterFactory.create(App.getInstance().gson))
                 .client(client)
                 .build();
-
+        Long currentTime = System.currentTimeMillis();
         this.mGankService = retrofit.create(GankService.class);
+        Log.e("TAG","time = "+(System.currentTimeMillis()-currentTime));
 
     }
 
