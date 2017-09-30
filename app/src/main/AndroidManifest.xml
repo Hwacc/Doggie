@@ -10,6 +10,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/AppTheme.NoActionBar">
         <activity android:name=".main.MainActivity">
             <intent-filter>
@@ -19,7 +20,10 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".main.activity.HomeActivity.MainActivity">
+        <activity
+            android:name=".main.activity.HomeActivity.MainActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

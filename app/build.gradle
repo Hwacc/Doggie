@@ -5,7 +5,7 @@ android {
     buildToolsVersion "26.0.1"
     defaultConfig {
         applicationId "example.doggie"
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 24
         versionCode 1
         versionName "1.0"
@@ -39,7 +39,11 @@ dependencies {
     compile 'com.facebook.fresco:fresco:1.5.0'
     compile 'com.facebook.fresco:animated-gif:1.5.0'
     compile 'com.squareup.okhttp3:logging-interceptor:3.8.1'
-    compile ('com.alibaba.android:vlayout:1.2.0@aar') {
+    compile('com.alibaba.android:vlayout:1.2.0@aar') {
         transitive = true
     }
+    compile group: 'cn.jzvd', name: 'jiaozivideoplayer', version: '6.0.1'
+    compile project(':easypopup')
+    compile group: 'com.jakewharton', name: 'butterknife', version: '7.0.1'
+    compile group: 'pl.droidsonroids.gif', name: 'android-gif-drawable', version: '1.2.8'
 }

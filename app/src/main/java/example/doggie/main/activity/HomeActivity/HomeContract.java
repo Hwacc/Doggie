@@ -4,6 +4,7 @@ import com.alibaba.android.vlayout.DelegateAdapter;
 
 import example.doggie.app.core.base.IBasePresenter;
 import example.doggie.app.core.base.IBaseView;
+import example.doggie.app.core.bean.BaseGankData;
 import example.doggie.main.MainContract;
 
 /**
@@ -18,10 +19,13 @@ public class HomeContract {
         void onComplete();
         void setAdapter(DelegateAdapter.Adapter adapter);
         void onUpdateToolBar(String url);
+        void showDetailPop(BaseGankData data);
     }
 
     interface PresenterI extends IBasePresenter {
         void getData();
+        void initDataTime(int year,int month,int day);
+        void subscribeByDate(int year,int month,int day);
     }
 
 }

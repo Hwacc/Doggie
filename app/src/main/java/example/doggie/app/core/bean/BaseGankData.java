@@ -3,6 +3,7 @@ package example.doggie.app.core.bean;
 import com.google.gson.annotations.SerializedName;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
@@ -37,4 +38,7 @@ public class BaseGankData implements Serializable {
 
     // 更新时间
     @SerializedName("updatedAt") public Date updatedAt;
+
+    //图片list
+    @SerializedName("images") public ArrayList<String> imagesList;
 }

@@ -3,6 +3,7 @@ package example.doggie.main.activity.HomeActivity;
 import android.content.Context;
 import android.util.Log;
 import android.util.Pair;
+import android.view.View;
 
 import com.alibaba.android.vlayout.DelegateAdapter;
 
@@ -12,8 +13,11 @@ import java.util.List;
 import example.doggie.app.core.api.GankApi;
 import example.doggie.app.core.bean.BaseGankData;
 import example.doggie.app.core.bean.GankDaily;
+import example.doggie.app.core.bean.ParseVideoData;
 import example.doggie.app.service.Gank;
 import example.doggie.app.service.GankService;
+import example.doggie.app.service.ParseVideo;
+import example.doggie.app.service.ParseVideoService;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -31,9 +35,10 @@ import io.reactivex.schedulers.Schedulers;
 
 public class HomePresenter implements HomeContract.PresenterI{
 
+    private static final String TAG = HomePresenter.class.getSimpleName();
     private HomeContract.View mView;
-    private Gank mGank;
     private GankService mGankService;
+    private ParseVideoService mPVService;
     private int mY,mM,mD;
     private Disposable mDisposable;
     private boolean mCompleteLock = false;
@@ -43,17 +48,26 @@ public class HomePresenter implements HomeContract.PresenterI{
     public HomePresenter(Context context,HomeContract.View view) {
         this.mContext = context;
         this.mView = view;
-        mGank = Gank.getInstance();
-        mGankService = mGank.getGankService();
+        mGankService = Gank.getInstance().getGankService();
+        mPVService = ParseVideo.getInstance().getPVService();
         mAdapterHelper = new HomeAdapterHelper(context);
+        mAdapterHelper.setmOnItemClickListener(new HomeAdapterHelper.OnItemClickListener() {
+            @Override
+            public void onItemClick(View itemView, BaseGankData data, int itemType) {
+//                Log.d(TAG,"position = "+ data.url);
+                mView.showDetailPop(data);
+            }
+        });
     }
 
+    @Override
     public void initDataTime(int year,int month,int day){
         this.mY = year;
         this.mM = month;
         this.mD = day;
     }
 
+    @Override
     public void subscribeByDate(int year,int month,int day){
         this.mY = year;
         this.mM = month;
@@ -61,12 +75,12 @@ public class HomePresenter implements HomeContract.PresenterI{
         this.subscribe();
     }
 
+
     @Override
     public void subscribe() {
         if(mGankService != null){
             Observable<String> titleObservable =  mGankService.getDaily(mY,mM,mD)
                     .subscribeOn(Schedulers.newThread())
-                    .observeOn(Schedulers.io())
                     .map(new Function<GankDaily, String>() {
                         @Override
                         public String apply(@NonNull GankDaily gankDaily) throws Exception {
@@ -75,9 +89,10 @@ public class HomePresenter implements HomeContract.PresenterI{
                             }
                             return "null";
                         }
-                    })
-                    .observeOn(AndroidSchedulers.mainThread());
-            titleObservable.subscribe(new Consumer<String>() {
+                    });
+//                    .observeOn(AndroidSchedulers.mainThread());
+            titleObservable.observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Consumer<String>() {
                 @Override
                 public void accept(String s) throws Exception {
                     mView.onUpdateToolBar(s);
@@ -85,11 +100,11 @@ public class HomePresenter implements HomeContract.PresenterI{
             });
 
             Observable<DelegateAdapter.Adapter> observable =  mGankService.getDaily(mY,mM,mD)
-                    .subscribeOn(Schedulers.newThread())
+                    .subscribeOn(Schedulers.io())
                     .filter(new Predicate<GankDaily>() {
                         @Override
                         public boolean test(@NonNull GankDaily gankDaily) throws Exception {
-                            Log.d("TAG","filter in "+Thread.currentThread().getName()+"thread");
+                            Log.d(TAG,"filter in "+Thread.currentThread().getName()+"thread");
                             mCompleteLock = false;
                             return !gankDaily.results.isEmpty();
                         }
@@ -119,15 +134,22 @@ public class HomePresenter implements HomeContract.PresenterI{
                             List<DelegateAdapter.Adapter> adapterList = new ArrayList<>();
                             switch (stringListPair.first){
                                 case GankApi.DATA_TYPE_ANDROID:
-                                    adapterList.add(mAdapterHelper.makeLinearAdapter(stringListPair.second));
+                                case GankApi.DATA_TYPE_IOS:
+                                case GankApi.DATA_TYPE_JS:
+                                    adapterList.add(mAdapterHelper.makeInfoAdapter(stringListPair.second));
+                                    break;
+                                case GankApi.DATA_TYPE_REST_VIDEO:
+                                    Log.e(TAG,"get Rest Viedeo...");
+//                                    subscribePV(stringListPair.second.get(0).url);
+                                    adapterList.add(mAdapterHelper.makeVideoAdapter(stringListPair.second));
                                     break;
                             }
                             return Observable.fromIterable(adapterList);
                         }
-                    })
-                    .observeOn(AndroidSchedulers.mainThread());
+                    });
 
-            mDisposable =  observable.subscribe(new Consumer<DelegateAdapter.Adapter>() {
+            mDisposable =  observable.observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Consumer<DelegateAdapter.Adapter>() {
                 @Override
                 public void accept(DelegateAdapter.Adapter adapter) throws Exception {
                     Log.d("TAG","subcribe in "+Thread.currentThread().getName()+"thread");

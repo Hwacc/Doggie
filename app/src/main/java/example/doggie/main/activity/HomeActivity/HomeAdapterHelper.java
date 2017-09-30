@@ -6,6 +6,7 @@ import android.graphics.PointF;
 import android.media.FaceDetector;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 import android.support.v4.util.Pair;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -13,6 +14,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.alibaba.android.vlayout.DelegateAdapter;
@@ -32,24 +34,49 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
+import cn.jzvd.JZVideoPlayer;
+import cn.jzvd.JZVideoPlayerStandard;
 import example.doggie.R;
 import example.doggie.app.core.api.GankApi;
 import example.doggie.app.core.bean.BaseGankData;
+import example.doggie.app.core.bean.ParseVideoData;
+import example.doggie.app.service.ParseVideo;
+import example.doggie.app.service.ParseVideoService;
 import example.doggie.app.utils.MatcherUtil;
+import example.doggie.main.MainContract;
 import example.doggie.main.widget.StickyLayoutHelper;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * Created by Hwa on 2017/9/27.
  */
 
-public class HomeAdapterHelper {
+public class HomeAdapterHelper implements View.OnClickListener{
     public static final int INFO_TYPE = 100;
     public static final int LINEAR_TYPE = 101;
     public static final int STICK_TYPE = 102;
+    public static final int VIDEO_TYPE=103;
 
     private static final String TAG = HomeAdapterHelper.class.getSimpleName();
 
     private Context mContext;
+
+    public interface OnItemClickListener{
+        void onItemClick(View itemView,BaseGankData data,int itemType);
+    }
+    private OnItemClickListener mOnItemClickListener = null;
+
+    @Override
+    public void onClick(View v) {
+        this.mOnItemClickListener.onItemClick(v,(BaseGankData) v.getTag(R.string.tag_position),(int)v.getTag(R.string.tag_type));
+    }
+    public void setmOnItemClickListener(OnItemClickListener listener){
+        this.mOnItemClickListener = listener;
+    }
 
     public HomeAdapterHelper(Context context){
         this.mContext = context;
@@ -84,7 +111,7 @@ public class HomeAdapterHelper {
         return stickAdapter;
     }
 
-    public DelegateAdapter.Adapter makeLinearAdapter(final List<BaseGankData> datas){
+    public DelegateAdapter.Adapter makeInfoAdapter(final List<BaseGankData> datas){
         if(datas == null || datas.size() == 0){
             return DelegateAdapter.simpleAdapter(LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_404_item,null));
         }else {
@@ -93,13 +120,15 @@ public class HomeAdapterHelper {
                 public LayoutHelper onCreateLayoutHelper() {
                     LinearLayoutHelper helper = new LinearLayoutHelper();
                     int margin = (int) mContext.getResources().getDimension(R.dimen.margin_10dp);
-                    helper.setMargin(margin, margin, margin, margin);
+                    helper.setMargin(0, 0, 0, margin);
                     return helper;
                 }
                 @Override
                 public HomeAdapterHelper.InfoHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-                    HomeAdapterHelper.InfoHolder holder = new HomeAdapterHelper.InfoHolder(
-                            LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_item_linear, parent, false));
+                    View rootView = LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_item_linear, parent, false);
+                    HomeAdapterHelper.InfoHolder holder = new HomeAdapterHelper.InfoHolder(rootView);
+                    rootView.setOnClickListener(HomeAdapterHelper.this);
+                    rootView.setTag(R.string.tag_type,viewType);
                     return holder;
                 }
 
@@ -108,9 +137,14 @@ public class HomeAdapterHelper {
                     BaseGankData data = datas.get(position);
                     if(data.type.equals(GankApi.DATA_TYPE_ANDROID)){
                         holder.titleImgView.setImageResource(R.mipmap.android);
-                        holder.titleView.setText(data.desc);
-                        holder.authorView.setText(data.who);
+                    }else if(data.type.equals(GankApi.DATA_TYPE_IOS)){
+                        holder.titleImgView.setImageResource(R.mipmap.ios_logo);
+                    }else if(data.type.equals(GankApi.DATA_TYPE_JS)){
+                        holder.titleImgView.setImageResource(R.mipmap.js_logo);
                     }
+                    holder.titleView.setText(data.desc);
+                    holder.authorView.setText(data.who);
+                    holder.itemView.setTag(R.string.tag_position,data);
                 }
 
                 @Override
@@ -124,6 +158,65 @@ public class HomeAdapterHelper {
             };
             return androidAdapter;
         }
+    }
+
+    public DelegateAdapter.Adapter makeVideoAdapter(@NonNull final List<BaseGankData> datas){
+
+        DelegateAdapter.Adapter<VideoHolder> adapter = new DelegateAdapter.Adapter<VideoHolder>() {
+            private String mUrl;
+            private ParseVideoService pvService = ParseVideo.getInstance().getPVService();
+
+            @Override
+            public VideoHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+                HomeAdapterHelper.VideoHolder holder = new HomeAdapterHelper.VideoHolder(
+                        LayoutInflater.from(mContext).inflate(R.layout.layout_recycler_video_item, parent, false));
+                return holder;
+            }
+
+            @Override
+            public void onBindViewHolder(final VideoHolder holder, int position) {
+                if(mUrl == null || mUrl.length()<=0){
+                    String url = datas.get(position).url;
+                    int avIndex = url.indexOf("av");
+                    String avID = url.substring(avIndex + 2, url.length()-1);
+                    pvService.getParseVideoData(avID,"json",2)
+                            .subscribeOn(Schedulers.newThread())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Consumer<ParseVideoData>() {
+                                @Override
+                                public void accept(ParseVideoData parseVideoData) throws Exception {
+                                    if(parseVideoData != null && parseVideoData.getStatus().getCode() == 200){
+                                        Log.e(TAG,"parse url = "+parseVideoData.getResult().getUrl().getMain());
+                                        mUrl = parseVideoData.getResult().getUrl().getMain();
+                                        holder.videoPlayerStandard.setUp(mUrl, JZVideoPlayer.SCREEN_LAYOUT_NORMAL,"Test Video");
+                                    }
+                                }
+                            });
+                }else{
+                    holder.videoPlayerStandard.setUp(mUrl, JZVideoPlayer.SCREEN_LAYOUT_NORMAL,"Test Video");
+                }
+
+            }
+
+            @Override
+            public int getItemCount() {
+                return datas.size();
+            }
+
+            @Override
+            public LayoutHelper onCreateLayoutHelper() {
+                LinearLayoutHelper helper = new LinearLayoutHelper();
+                int margin = (int) mContext.getResources().getDimension(R.dimen.margin_10dp);
+                helper.setMargin(0, 0, 0, margin);
+                return helper;
+            }
+
+            @Override
+            public int getItemViewType(int position) {
+                return VIDEO_TYPE;
+            }
+        };
+        return adapter;
     }
 
     /*public DelegateAdapter.Adapter makeWelfareAdapter(final List<BaseGankData> welfareData){
@@ -176,24 +269,25 @@ public class HomeAdapterHelper {
         }
     }*/
 
-    private class StickyHolder extends RecyclerView.ViewHolder{
+    class StickyHolder extends RecyclerView.ViewHolder{
+        @Bind(R.id.text_view)
         TextView textView;
         StickyHolder(View itemView) {
             super(itemView);
-            textView = (TextView) itemView.findViewById(R.id.text_view);
+            ButterKnife.bind(this,itemView);
         }
     }
 
-    private class InfoHolder extends RecyclerView.ViewHolder {
-        ImageView titleImgView;
-        TextView titleView;
-        TextView authorView;
+    class InfoHolder extends RecyclerView.ViewHolder {
+        View itemView;
+        @Bind(R.id.item_info_img) ImageView titleImgView;
+        @Bind(R.id.item_info_title) TextView titleView;
+        @Bind(R.id.item_info_author) TextView authorView;
 
         public InfoHolder(View itemView) {
             super(itemView);
-            titleImgView = (ImageView) itemView.findViewById(R.id.item_info_img);
-            titleView = (TextView) itemView.findViewById(R.id.item_info_title);
-            authorView = (TextView) itemView.findViewById(R.id.item_info_author);
+            this.itemView = itemView;
+            ButterKnife.bind(this,itemView);
         }
     }
 
@@ -205,6 +299,16 @@ public class HomeAdapterHelper {
             super(itemView);
             draweeView = (DraweeView) itemView.findViewById(R.id.item_drawee_view);
             titleView = (TextView) itemView.findViewById(R.id.item_title);
+        }
+    }
+
+    private class VideoHolder extends RecyclerView.ViewHolder{
+        int index;
+        String url;
+        JZVideoPlayerStandard videoPlayerStandard;
+        public VideoHolder(View itemView) {
+            super(itemView);
+            videoPlayerStandard = (JZVideoPlayerStandard) itemView.findViewById(R.id.item_video);
         }
     }
 }

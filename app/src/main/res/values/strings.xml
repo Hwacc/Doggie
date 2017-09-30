@@ -2,4 +2,8 @@
     <string name="app_name">Doggie</string>
     <string name="drawer_open">drawerOpen</string>
     <string name="drawer_close">drawerClose</string>
+    <string name="end_string">__________END__________</string>
+    <string name="tag_position"/>
+    <string name="tag_type"/>
+    <string name="gif_tag"/>
 </resources>

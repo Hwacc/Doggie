@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/margin_8dp"
     android:background="@drawable/recycler_linear_shape">
 
     <ImageView
@@ -27,7 +29,7 @@
         android:ellipsize="end"
         android:textColor="@color/black"
         android:textSize="16sp"
-        android:text="aaaaaaaaaaaaabbbbbbbbbbbbbbbbbbc"
+        android:text="title"
         />
 
     <TextView
@@ -37,7 +39,7 @@
         android:layout_toRightOf="@+id/item_info_img"
         android:layout_below="@+id/item_info_title"
         android:layout_marginBottom="@dimen/margin_8dp"
-        android:text="bbbbbccccc"
+        android:text="author"
         android:textColor="@color/grey600"
         android:textSize="14sp"/>
 

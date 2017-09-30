@@ -17,10 +17,12 @@ import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.TextView;
 
 import com.alibaba.android.vlayout.DelegateAdapter;
 import com.alibaba.android.vlayout.VirtualLayoutManager;
@@ -32,10 +34,16 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
 import java.util.Calendar;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
 import example.doggie.R;
+import example.doggie.app.core.bean.BaseGankData;
 import example.doggie.main.frag1.AdapterHelper;
 import example.doggie.main.widget.CircleImageView;
+import example.doggie.main.widget.InfoDetailPop;
 import example.doggie.main.widget.MaterialProgressDrawable;
+import example.easypopup.lib.HorizontalGravity;
+import example.easypopup.lib.VerticalGravity;
 
 /**
  * Created by Hwa on 2017/9/27.
@@ -44,48 +52,44 @@ import example.doggie.main.widget.MaterialProgressDrawable;
 public class MainActivity extends AppCompatActivity implements HomeContract.View {
 
     private HomePresenter mPresenter;
-
+    private static final String TAG = MainActivity.class.getSimpleName();
     private static int FOOTER_TYPE = 1;
-    private Toolbar mToolbar;
-    private TabLayout mTableLayout;
-    private AppBarLayout mAppbarLayout;
-    private CollapsingToolbarLayout mToolbarLayout;
-    private CoordinatorLayout mCoordinator;
-    private RecyclerView mRecyclerView;
+
+    @Bind(R.id.toolbar) Toolbar mToolbar;
+    @Bind(R.id.toolbar_layout) AppBarLayout mAppbarLayout;
+    @Bind(R.id.collapsing) CollapsingToolbarLayout mToolbarLayout;
+    @Bind(R.id.mian_coordinator) CoordinatorLayout mCoordinator;
+    @Bind(R.id.main_recycler) RecyclerView mRecyclerView;
     private VirtualLayoutManager mLayoutManager;
-    private DelegateAdapter mAdapter;
+    private MainAdapter mAdapter;
     private Handler mMainHandler;
     private int mYear = 2015,mMonth = 8,mDay = 7;
-    private SimpleDraweeView mToolbarImg;
+
+    @Bind(R.id.toolbar_img) SimpleDraweeView mToolbarImg;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.layout_activity_main);
+        ButterKnife.bind(this);
 
-        mAppbarLayout = (AppBarLayout) findViewById(R.id.toolbar_layout);
-        mToolbarLayout = (CollapsingToolbarLayout)findViewById(R.id.collapsing);
         //tool bar
-        mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mToolbar.setTitleTextColor(Color.parseColor("#ffffff"));
         setSupportActionBar(mToolbar);
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
         actionBar.setDisplayShowHomeEnabled(true);
-        mToolbarImg = (SimpleDraweeView) findViewById(R.id.toolbar_img);
 
-        mRecyclerView = (RecyclerView) findViewById(R.id.main_recycler);
         mLayoutManager = new VirtualLayoutManager(this, OrientationHelper.VERTICAL);
         mRecyclerView.setLayoutManager(mLayoutManager);
         RecyclerView.RecycledViewPool viewPool = new RecyclerView.RecycledViewPool();
         mRecyclerView.setRecycledViewPool(viewPool);
 
-        viewPool.setMaxRecycledViews(HomeAdapterHelper.INFO_TYPE,10);
+        viewPool.setMaxRecycledViews(HomeAdapterHelper.INFO_TYPE,20);
+        viewPool.setMaxRecycledViews(HomeAdapterHelper.VIDEO_TYPE,20);
         viewPool.setMaxRecycledViews(FOOTER_TYPE,2);
         mAdapter = new MainAdapter(mLayoutManager, true);
         mRecyclerView.setAdapter(mAdapter);
-
-
         Calendar calendar = Calendar.getInstance();
         mYear = calendar.get(Calendar.YEAR);
         mMonth = calendar.get(Calendar.MONTH) + 1;
@@ -104,6 +108,7 @@ public class MainActivity extends AppCompatActivity implements HomeContract.View
     @Override
     protected void onStop() {
         super.onStop();
+        mAdapter.clear();
         mPresenter.unsubscribe();
     }
 
@@ -114,7 +119,8 @@ public class MainActivity extends AppCompatActivity implements HomeContract.View
 
     @Override
     public void onSucceed(Object data) {
-
+        mAdapter.setStopRefresh(true);
+        mAdapter.notifyItemChanged(mAdapter.getItemCount()-1);
     }
 
     @Override
@@ -150,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements HomeContract.View
 
     @Override
     public void onUpdateToolBar(String url) {
-        Uri imageUri = Uri.parse(url.replace("large","bmiddle"));
+        Uri imageUri = Uri.parse(url.replace("large","large"));
         ImageRequest request = ImageRequestBuilder.newBuilderWithSource(imageUri)
                 .build();
         DraweeController controller = Fresco.newDraweeControllerBuilder()
@@ -160,9 +166,23 @@ public class MainActivity extends AppCompatActivity implements HomeContract.View
         mToolbarImg.setController(controller);
     }
 
+    private InfoDetailPop mDetailPop;
+    @Override
+    public void showDetailPop(BaseGankData data) {
+        if(data != null){
+            Log.d(TAG,"position = "+ data.url);
+            if(mDetailPop == null){
+                mDetailPop = new InfoDetailPop(this).createPopup();
+            }
+            mDetailPop.showAtAnchorView(mCoordinator, VerticalGravity.CENTER, HorizontalGravity.CENTER,0,0);
+            mDetailPop.setData(data);
+        }
+    }
+
     private class MainAdapter extends DelegateAdapter{
 
         private ValueAnimator valueAnimator;
+        private boolean stopRefresh = false;
 
         MainAdapter(VirtualLayoutManager layoutManager, boolean hasConsistItemType) {
             super(layoutManager,hasConsistItemType);
@@ -171,6 +191,9 @@ public class MainActivity extends AppCompatActivity implements HomeContract.View
                 valueAnimator.setDuration(600);
                 valueAnimator.setInterpolator(new DecelerateInterpolator());
             }
+        }
+        public void setStopRefresh (boolean flag){
+            stopRefresh = flag;
         }
 
         @Override
@@ -210,19 +233,33 @@ public class MainActivity extends AppCompatActivity implements HomeContract.View
                         loadHolder.progress.setArrowScale(n);
                     }
                 });
-                valueAnimator.start();
-                loadHolder.progress.start();
+
+                if(!stopRefresh){
+                    loadHolder.circleImageView.setVisibility(View.VISIBLE);
+                    loadHolder.loadingText.setVisibility(View.GONE);
+                    valueAnimator.start();
+                    loadHolder.progress.start();
+                }else{
+                    loadHolder.circleImageView.setVisibility(View.GONE);
+                    loadHolder.loadingText.setVisibility(View.VISIBLE);
+                    valueAnimator.cancel();
+                    loadHolder.progress.stop();
+                }
+
             }
             super.onBindViewHolder(holder, position);
         }
     }
 
-    private class LoadHolder extends RecyclerView.ViewHolder{
+    class LoadHolder extends RecyclerView.ViewHolder{
         MaterialProgressDrawable progress;
+        @Bind(R.id.loading_item)
         CircleImageView circleImageView;
+        @Bind(R.id.loading_item_text)
+        TextView loadingText;
         LoadHolder(View itemView) {
             super(itemView);
-            circleImageView = (CircleImageView) itemView.findViewById(R.id.loading_item);
+            ButterKnife.bind(this,itemView);
             progress = new MaterialProgressDrawable(MainActivity.this,circleImageView);
             progress.setBackgroundColor(Color.WHITE);
             progress.setColorSchemeColors(R.color.lightblue200,R.color.lightblue300,R.color.lightblue400,R.color.lightblue500);
